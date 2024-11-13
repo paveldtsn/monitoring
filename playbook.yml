@@ -1,0 +1,12 @@
+---
+- hosts: "all"
+  become: true
+  gather_facts: true
+  roles:
+    - elasticsearch_kibana
+    # - prometheus
+    #- node_exporter
+      #- ELK
+      #- Fluentbit
+    #- elasticsearch_kibana
+...

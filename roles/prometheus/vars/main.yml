@@ -1,0 +1,6 @@
+---
+_prometheus_binary_install_dir: '/usr/local/bin'
+
+_prometheus_binaries:
+  - prometheus
+  - promtool

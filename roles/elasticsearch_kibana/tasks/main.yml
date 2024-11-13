@@ -1,0 +1,48 @@
+---
+# Installing ElasticSearch
+- name: Install apt-transport-https for APT
+  ansible.builtin.apt:
+    name: apt-transport-https
+    state: present
+
+- name: Add ElasticSearch APT key
+  ansible.builtin.apt_key:
+    url: "https://artifacts.elastic.co/GPG-KEY-elasticsearch"
+    state: present
+
+- name: Add ElasticSearch repository
+  ansible.builtin.apt_repository:
+    repo: "deb https://artifacts.elastic.co/packages/7.x/apt stable main"
+    state: present
+    update_cache: yes
+
+- name: Install ElasticSearch
+  ansible.builtin.apt:
+    name: elasticsearch
+    state: present
+    update_cache: yes
+
+- name: Start and enable ElasticSearch service
+  ansible.builtin.systemd:
+    name: elasticsearch
+    enabled: yes
+    state: started
+
+# Installing Kibana
+- name: Install Kibana
+  ansible.builtin.apt:
+    name: kibana
+    state: present
+    update_cache: yes
+
+- name: "Configure Kibana to allow connections from remote users"
+  ansible.builtin.lineinfile:
+    path: "/etc/kibana/kibana.yml"
+    regexp: '^#server\.host: "localhost"$'
+    line: 'server.host: "0.0.0.0"'
+
+- name: Start and enable Kibana service
+  ansible.builtin.systemd:
+    name: kibana
+    enabled: yes
+    state: started

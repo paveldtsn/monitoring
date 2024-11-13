@@ -1,0 +1,26 @@
+[Unit]
+Description=bundle app service
+After=network.target
+
+[Service]
+
+### var env jinja
+Environment="SECRET_KEY_BASE={{ SECRET_KEY_BASE }}"
+Environment="RAILS_ENV={{ RAILS_ENV }}"
+Environment="RAILS_LOG_TO_STDOUT={{ RAILS_LOG_TO_STDOUT }}"
+Environment="DB_HOST={{ DB_HOST }}"
+Environment="DB_PORT={{ DB_PORT }}"
+Environment="DB_NAME={{ DB_NAME }}"
+Environment="DB_USER={{ DB_USER }}"
+Environment="DB_PASSWORD={{ DB_PASSWORD }}"
+ }}"
+
+###
+User=root
+Group=root
+
+WorkingDirectory=/app
+ExecStart=/bin/bash -lc /app/daemon_app.sh
+
+[Install]
+WantedBy=multi-user.target

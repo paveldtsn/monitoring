@@ -1,0 +1,62 @@
+---
+- name: Create group FLUENTBIT
+  ansible.builtin.group:
+    name: fluentbit
+    state: present
+
+- name: Add the user FLUENTBIT
+  ansible.builtin.user:
+    name: fluentbit
+    comment: TUZ
+    group: fluentbit
+    create_home: yes
+    shell: /bin/bash
+
+- name: "CURL+ install shell"
+  ansible.builtin.shell: "curl https://raw.githubusercontent.com/fluent/fluent-bit/master/install.sh | sh"
+  become: true
+
+- name: Allow port range 5170
+  community.general.ufw:
+    rule: allow
+    port: 5170
+    proto: tcp
+
+- name: Allow port range 2020
+  community.general.ufw:
+    rule: allow
+    port: 2020
+    proto: tcp
+
+- name: "Copy Config daemon"
+  ansible.builtin.copy:
+    src: "./roles/Fluentbit/files/fluentbit.service"
+    dest: "/etc/systemd/system/fluentbit.service"
+#    mode: "preserve"
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Remove fluent-bit.yml
+  ansible.builtin.file:
+    path: /etc/fluent-bit/fluent-bit.conf
+    state: absent
+
+
+- name: "Copy Config"
+  become: true
+  ansible.builtin.copy:
+    src: "./roles/Fluentbit/files/fluent-bit.conf"
+    dest: "/etc/fluent-bit/fluent-bit.conf"
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: "Fluent-bit start daemon"
+  ansible.builtin.service:
+    name: "fluent-bit"
+    state: "started"
+    enabled: true
+  become: true
+
+

@@ -1,0 +1,102 @@
+---
+- name: "PRE-INSTALL Prometheus"
+#https://github.com/prometheus/node_exporter/releases/download/v1.8.2/node_exporter-1.8.2.linux-amd64.tar.gz
+  ansible.builtin.apt:
+    name:
+      - wget
+    state: "present"
+    update_cache: true
+
+- name: Download prometheus with check (sha256)
+  ansible.builtin.get_url:
+    url: https://github.com/prometheus/node_exporter/releases/download/v1.8.2/node_exporter-1.8.2.linux-amd64.tar.gz
+    dest: /tmp/node_exporter-1.8.2.linux-amd64.tar.gz
+#    checksum: 6809dd0b3ec45fd6e992c19071d6b5253aed3ead7bf0686885a51d85c6643c66
+
+- name: Unarchive a file that is already on the remote machine
+  ansible.builtin.unarchive:
+    src: /tmp/node_exporter-1.8.2.linux-amd64.tar.gz
+    dest: /tmp/
+    remote_src: yes
+
+- name: Create group node_exporter
+  ansible.builtin.group:
+    name: node_exporter
+    state: present
+
+- name: Add the user 'node_exporter'
+  ansible.builtin.user:
+    name: node_exporter
+    comment: TUZ
+    group: node_exporter
+    create_home: yes
+    shell: /bin/bash
+
+
+- name: Copy file Node_exporter with owner and permissions
+  ansible.builtin.copy:
+    src: /tmp/node_exporter-1.8.2.linux-amd64/node_exporter
+    dest: /usr/local/bin/node_exporter
+    owner: node_exporter
+    group: node_exporter
+    mode: u+rwx,g=,o=
+    remote_src: yes
+
+- name: "stopped_prometheus"
+  ansible.builtin.service:
+    name: prometheus
+    state: stopped
+  become: true
+
+
+- name: Remove prometheus.yml
+  ansible.builtin.file:
+    path: /etc/prometheus/prometheus.yml
+    state: absent
+
+- name: "Copy Source CONFIG Prometheus.yml"
+  ansible.builtin.copy:
+    src: "./roles/node_exporter/files/prometheus.yml"
+    dest: "/etc/prometheus/prometheus.yml"
+#    mode: "preserve"
+    owner: prometheus
+    group: prometheus
+    mode: '0755'
+
+- name: "Copy Source CONFIG-SERVICE"
+  ansible.builtin.copy:
+    src: "./roles/node_exporter/files/node_exporter.service"
+    dest: "/etc/systemd/system/node_exporter.service"
+#    mode: "preserve"
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Allow port 9100
+  community.general.ufw:
+    rule: allow
+    port: 9100
+    proto: tcp
+
+- name: "start_prometheus"
+  ansible.builtin.service:
+    name: prometheus
+    state: started
+  become: true
+
+- name: "start_node_exporter"
+  ansible.builtin.service:
+    name: "node_exporter"
+    state: "started"
+    enabled: true
+  become: true
+
+- name: Garbage recursively remove TMP source directory
+  ansible.builtin.file:
+    path: /tmp/node_exporter-1.8.2.linux-amd64/
+    state: absent
+
+
+
+
+

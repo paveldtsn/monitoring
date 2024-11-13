@@ -1,0 +1,53 @@
+---
+prometheus_version: 2.55.0
+prometheus_binary_url: "https://github.com/{{ _prometheus_repo }}/releases/download/v{{ prometheus_version }}/\
+                        prometheus-{{ prometheus_version }}.{{ ansible_system | lower }}-{{ _prometheus_go_ansible_arch }}.tar.gz"
+prometheus_checksums_url: "https://github.com/{{ _prometheus_repo }}/releases/download/v{{ prometheus_version }}/sha256sums.txt"
+
+prometheus_binary_install_dir: /usr/local/bin
+prometheus_config_dir: /etc/prometheus
+prometheus_db_dir: /var/lib/prometheus
+prometheus_read_only_dirs: []
+
+prometheus_web_listen_address: "0.0.0.0:9090"
+prometheus_web_external_url: ''
+prometheus_metrics_path: "/{{ (prometheus_web_external_url + '/metrics') | regex_replace('^(.*://)?(.*?)/') }}"
+
+prometheus_storage_retention: "30d"
+prometheus_global:
+  scrape_interval: 15s
+  scrape_timeout: 10s
+  evaluation_interval: 15s
+
+prometheus_scrape_configs:
+  - job_name: "prometheus"
+    metrics_path: "{{ prometheus_metrics_path }}"
+    static_configs:
+      - targets:
+          - "{{ ansible_fqdn | default(ansible_host) | default('localhost') }}:9090"
+  - job_name: "node"
+    file_sd_configs:
+      - files:
+          - "{{ prometheus_config_dir }}/file_sd/node.yml"
+
+# Alternative config file name, searched in ansible templates path.
+prometheus_config_file: 'prometheus.yml.j2'
+
+prometheus_alert_rules_files:
+  - prometheus/rules/*.rules
+
+prometheus_static_targets_files:
+  - prometheus/targets/*.yml
+  - prometheus/targets/*.json
+
+prometheus_scrape_config_files:
+  - prometheus/targets/*.yml
+  - prometheus/targets/*.json
+
+prometheus_system_group: 'prometheus'
+prometheus_system_user: "{{ prometheus_system_group }}"
+
+prometheus_stop_timeout: '600s'
+
+# Local path to stash the archive and its extraction
+prometheus_local_cache_path: "/tmp/prometheus-"

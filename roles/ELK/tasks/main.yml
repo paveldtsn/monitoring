@@ -1,0 +1,93 @@
+---
+
+#export ELASTIC_PASSWORD="your_password"
+#https://mirror.yandex.ru/mirrors/elastic/8/pool/main/e/elasticsearch/elasticsearch-8.15.3-amd64.deb
+
+#- name: Update all packages to their latest version
+#  ansible.builtin.apt:
+#    name: "*"
+#    state: latest
+#  become: true
+
+- name: Install a ELK_8.10.deb package from the Yandex
+  ansible.builtin.apt:
+    deb: https://mirror.selectel.ru/3rd-party/elasticsearch-8.x/pool/main/e/elasticsearch/elasticsearch-8.14.1-amd64.deb
+  become: true
+# state: "latest"
+  ignore_errors: true
+
+- name: Allow port elastics 9200
+  community.general.ufw:
+    rule: allow
+    port: 9200
+    proto: tcp
+
+- name: "elasticsearch start daemon"
+  ansible.builtin.service:
+    name: "elasticsearch"
+    state: "started"
+    enabled: true
+  become: true
+
+
+#- name: Add specified repository into sources list Yandex
+#  ansible.builtin.apt_repository:
+#    repo: deb https://mirror.yandex.ru/mirrors/ubuntu
+#    state: present
+
+- name: Install a Kibana_8.14.1.deb package from the Yandex
+  ansible.builtin.apt:
+    deb: https://mirror.selectel.ru/3rd-party/elasticsearch-8.x/pool/main/k/kibana/kibana-8.14.1-amd64.deb
+#  state: "latest"
+  become: true
+  ignore_errors: true
+
+- name: Allow port kibana 5601
+  community.general.ufw:
+    rule: allow
+    port: 5601
+    proto: tcp
+
+
+- name: "kibana start daemon"
+  ansible.builtin.service:
+    name: "kibana"
+    state: "started"
+    enabled: true
+  become: true
+
+
+
+
+
+
+
+
+
+
+- name: Remove useless packages from the cache
+  ansible.builtin.apt:
+    autoclean: yes
+
+
+
+
+
+
+
+
+
+#- name: "Install RVM"
+#  ansible.builtin.shell: "bash -lc cd /home/vagrant"
+
+#- name: "Postgres start daemon"
+#  ansible.builtin.service:
+#    name: "postgresql"
+#    state: "started"
+#    enabled: true
+#  become: true
+
+#- name: "restart_prometheus"
+#  ansible.builtin.service:
+#    name: prometheus
+#    state: restarted

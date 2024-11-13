@@ -1,0 +1,148 @@
+---
+- name: "PRE-INSTALL Prometheus"
+#https://github.com/prometheus/prometheus/releases/download/v2.55.0-rc.1/prometheus-2.55.0-rc.1.linux-amd64.tar.gz
+  ansible.builtin.apt:
+    name:
+      - wget
+    state: "present"
+    update_cache: true
+
+- name: Create group prometheus
+  ansible.builtin.group:
+    name: prometheus
+    state: present
+
+- name: Add the user 'johnd' with a specific uid and a primary group of 'admin'
+  ansible.builtin.user:
+    name: prometheus
+    comment: TUZ
+    group: prometheus
+    create_home: yes
+    shell: /bin/bash
+
+- name: Create a directory /etc/prometheus
+  ansible.builtin.file:
+    path: /etc/prometheus
+    state: directory
+    mode: '0755'
+    owner: prometheus
+    group: prometheus
+
+- name: Create a directory /var/lib/prometheus
+  ansible.builtin.file:
+    path: /var/lib/prometheus
+    state: directory
+    mode: '0755'
+    owner: prometheus
+    group: prometheus
+
+- name: Download prometheus with check (sha256)
+  ansible.builtin.get_url:
+    url: https://github.com/prometheus/prometheus/releases/download/v2.55.0-rc.1/prometheus-2.55.0-rc.1.linux-amd64.tar.gz
+    dest: /tmp/prometheus-2.55.0-rc.1.linux-amd64.tar.gz
+    checksum: sha256:d8eb8ab7e91db82f06dfba453d90791d71fc79aeddf2a5ba0d9b0a9ab79eb7b3
+
+- name: Unarchive a file that is already on the remote machine
+  ansible.builtin.unarchive:
+    src: /tmp/prometheus-2.55.0-rc.1.linux-amd64.tar.gz
+    dest: /tmp/
+    remote_src: yes
+
+- name: Copy file prometheus with owner and permissions
+  ansible.builtin.copy:
+    src: /tmp/prometheus-2.55.0-rc.1.linux-amd64/prometheus
+    dest: /usr/local/bin/prometheus
+    owner: prometheus
+    group: prometheus
+    mode: u+rwx,g=,o=
+    remote_src: yes
+
+- name: Copy file promtool with owner and permissions
+  ansible.builtin.copy:
+    src: /tmp/prometheus-2.55.0-rc.1.linux-amd64/promtool
+    dest: /usr/local/bin/promtool
+    owner: prometheus
+    group: prometheus
+    mode: u+rwx,g=,o=
+    remote_src: yes
+
+- name: "Copy Source"
+  ansible.builtin.copy:
+    src: "/tmp/prometheus-2.55.0-rc.1.linux-amd64/consoles/"
+    dest: "/etc/prometheus/consoles/"
+#    mode: "preserve"
+    owner: prometheus
+    group: prometheus
+    mode: '0755'
+    remote_src: yes
+
+- name: "Copy Source LIB"
+  ansible.builtin.copy:
+    src: "/tmp/prometheus-2.55.0-rc.1.linux-amd64/console_libraries/"
+    dest: "/etc/prometheus/console_libraries/"
+#    mode: "preserve"
+    owner: prometheus
+    group: prometheus
+    mode: '0755'
+    remote_src: yes
+- name: "Copy Source CONFIG"
+  ansible.builtin.copy:
+    src: "./roles/prometheus/files/prometheus.yml"
+    dest: "/etc/prometheus/prometheus.yml"
+#    mode: "preserve"
+    owner: prometheus
+    group: prometheus
+    mode: '0644'
+
+- name: "Copy Source CONFIG-SERVICE"
+  ansible.builtin.copy:
+    src: "./roles/prometheus/files/prometheus.service"
+    dest: "/etc/systemd/system/prometheus.service"
+#    mode: "preserve"
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Allow port range  8080-8082
+  community.general.ufw:
+    rule: allow
+    port: 8080:8082
+    proto: tcp
+
+
+- name: "Prometheus start daemon"
+  ansible.builtin.service:
+    name: "prometheus"
+    state: "started"
+    enabled: true
+  become: true
+
+
+- name: Garbage recursively remove TMP source directory
+  ansible.builtin.file:
+    path: /tmp/prometheus-2.55.0-rc.1.linux-amd64/
+    state: absent
+
+
+
+
+
+
+
+
+
+
+#- name: "Install RVM"
+#  ansible.builtin.shell: "bash -lc cd /home/vagrant"
+
+#- name: "Postgres start daemon"
+#  ansible.builtin.service:
+#    name: "postgresql"
+#    state: "started"
+#    enabled: true
+#  become: true
+
+#- name: "restart_prometheus"
+#  ansible.builtin.service:
+#    name: prometheus
+#    state: restarted
